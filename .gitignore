@@ -1,0 +1,42 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build output
+dist/
+build/
+
+# Environment
+.env
+.env.local
+*.log
+
+# Docker
+*.pid
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Evidence (large screenshots/videos)
+evidence/*.mp4
+evidence/*.png
+evidence/*.jpg
+
+# Extracted Git repo for challenge (contains its own .git)
+web/static/git-repo/
+
+# CTFd data
+ctfd/*.db
+ctfd/data/
+
+# Local test files
+*.zip.tmp

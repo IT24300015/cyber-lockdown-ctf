@@ -1,0 +1,56 @@
+services:
+  ctfd:
+    image: ctfd/ctfd:latest
+    container_name: ctfd
+    ports:
+      - "8000:8000"
+    networks:
+      - ctf_public
+    volumes:
+      - ctfd_data:/var/lib/ctfd
+    restart: unless-stopped
+
+  web:
+    build: ./web
+    container_name: web
+    ports:
+      - "80:3000"
+    networks:
+      - ctf_public
+      - ctf_internal
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  db:
+    image: mysql:8.0
+    container_name: db
+    environment:
+      MYSQL_ROOT_PASSWORD: ctf_root_pass
+      MYSQL_DATABASE: ctfdb
+      MYSQL_USER: ctfuser
+      MYSQL_PASSWORD: ctf_pass
+    networks:
+      - ctf_internal
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: unless-stopped
+
+  linuxbox:
+    build: ./linuxbox
+    container_name: linuxbox
+    ports:
+      - "22:22"
+    networks:
+      - ctf_public
+    restart: unless-stopped
+
+networks:
+  ctf_public:
+    driver: bridge
+  ctf_internal:
+    driver: bridge
+
+volumes:
+  ctfd_data:
+  db_data:
