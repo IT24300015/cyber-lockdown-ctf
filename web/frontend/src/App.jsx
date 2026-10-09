@@ -225,7 +225,20 @@ function ChallengePage({ c, list, onBack, onChange, onOpenStage }) {
     try {
       const r = await api(`/challenges/${c.id}/steps/${stepNo}/verify`, { method:'POST', body:{ answer } });
       setResults(prev => ({ ...prev, [stepNo]: { correct: r.correct, message: r.message } }));
-      if (r.correct) { setAnswers(prev => ({ ...prev, [stepNo]: '' })); await onChange(); }
+      if (r.correct) {
+        setAnswers(prev => ({ ...prev, [stepNo]: '' }));
+        await onChange();
+        // If backend auto-completed the challenge (last step IS the flag)
+        if (r.challengeComplete) {
+          setCelebration({
+            awarded: r.awarded,
+            basePoints: r.basePoints ?? c.points,
+            hintPenalty: r.hintPenalty ?? 0,
+            title: c.title,
+            alreadySolved: !!r.alreadySolved
+          });
+        }
+      }
     } catch (e) {
       setResults(prev => ({ ...prev, [stepNo]: { correct:false, message: e.message } }));
     } finally { setBusy(null); }
@@ -241,7 +254,6 @@ function ChallengePage({ c, list, onBack, onChange, onOpenStage }) {
       if (r.correct) {
         setFlag('');
         await onChange();
-        // Show celebration with the awarded/base/penalty from backend
         setCelebration({
           awarded: r.awarded,
           basePoints: r.basePoints ?? c.points,
@@ -358,16 +370,20 @@ function ChallengePage({ c, list, onBack, onChange, onOpenStage }) {
 
       <div className="flagSection">
         <h3>🚩 Submit Flag</h3>
-        {c.solved
-          ? <div className="solvedBox big"><strong>✓ Challenge complete</strong> +{c.awarded} points</div>
-          : <>
-              <p className="sub">Once you have found the flag at the final step, submit it here.</p>
-              <form className="flagForm" onSubmit={submitFlag}>
-                <input type="text" placeholder="CTF{...}" value={flag} onChange={(e)=>setFlag(e.target.value)} disabled={flagBusy}/>
-                <button type="submit" disabled={flagBusy}>{flagBusy?'Checking...':'Submit flag'}</button>
-              </form>
-              {flagMsg && <p className="authmsg">{flagMsg}</p>}
-            </>}
+        {c.solved ? (
+          <div className="solvedBox big"><strong>✓ Challenge complete</strong> +{c.awarded} points</div>
+        ) : completed.length < c.steps.length ? (
+          <p className="sub">🔒 Complete all steps above to unlock flag submission.</p>
+        ) : (
+          <>
+            <p className="sub">You have all the information you need. Submit the flag to complete the challenge.</p>
+            <form className="flagForm" onSubmit={submitFlag}>
+              <input type="text" placeholder="CTF{...}" value={flag} onChange={(e)=>setFlag(e.target.value)} disabled={flagBusy}/>
+              <button type="submit" disabled={flagBusy}>{flagBusy?'Checking...':'Submit flag'}</button>
+            </form>
+            {flagMsg && <p className="authmsg">{flagMsg}</p>}
+          </>
+        )}
       </div>
 
       {celebration && (

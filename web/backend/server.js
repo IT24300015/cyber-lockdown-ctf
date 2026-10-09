@@ -28,7 +28,6 @@ db.query(`CREATE TABLE IF NOT EXISTS submissions (
   UNIQUE KEY unique_sub (user_id, challenge_id)
 )`);
 
-// Safe migration: add awarded column if it doesn't exist
 db.query(`ALTER TABLE submissions ADD COLUMN awarded INT DEFAULT 0`, () => {});
 
 db.query(`CREATE TABLE IF NOT EXISTS unlocked_hints (
@@ -56,14 +55,17 @@ const CHALLENGES = [
       {no:2,text:'Deleted files are still recoverable from older commits.',penalty:10}
     ],
     steps:[
-      {no:1, title:'Understand the repository',
-        instruction:'Download and extract the leaked repository. Something was removed before the public push. What is the filename that was deleted in the most recent commit?',
-        placeholder:'filename (e.g. secrets.txt)', answer:'config.env'},
-      {no:2, title:'Recover the leaked URL',
-        instruction:'The deleted file contained an internal Nova Tech address. What is the full staging URL that the insider exposed?',
+      {no:1, title:'Explore the repository',
+        instruction:'Download and extract the leaked repository. Look at its complete history. How many commits exist in total? (a number)',
+        placeholder:'number of commits', answer:'3'},
+      {no:2, title:'Find the removed file',
+        instruction:'Across those {prev} commits, one file was removed in the most recent commit. What is its filename?',
+        placeholder:'filename', answer:'config.env'},
+      {no:3, title:'Recover the URL',
+        instruction:'View the contents of the removed {prev} file. It exposed an internal Nova Tech address. What is the full URL?',
         placeholder:'http://...', answer:'http://192.168.56.20/staging'},
-      {no:3, title:'Extract the flag',
-        instruction:'The same file also contained the flag. Extract it from the recovered file contents and submit it.',
+      {no:4, title:'Extract the flag',
+        instruction:'The {prev} page and the flag were both in that file. Recover the flag and submit it to complete the challenge.',
         placeholder:'CTF{...}', answer:'CTF{0s1nt_r3p0_m3t4d4t4_l34k}'}
     ]
   },
@@ -153,61 +155,61 @@ const CHALLENGES = [
   {
     id:5, stage:5, title:'Packet Analysis & Key Recovery', domain:'Network Analysis', difficulty:'Moderate', points:300,
     tools:'Wireshark, tshark, ssh-keygen',
-    description:'A Nova Tech incident response team captured network traffic moments before the insider disconnected. The capture contains an unencrypted credential transfer. Recover the private key and the flag.',
+    description:'A Nova Tech incident response team captured network traffic moments before the insider disconnected. Something sensitive was exfiltrated. Recover it.',
     flag:'CTF{p4ck3t_f0r3ns1cs_k3y_r3c0v3r3d}',
     resource:{ label:'Download PCAP', url:'/challenge-files/incident.pcap', filename:'incident.pcap' },
     hints:[
-      {no:1,text:'Several TCP streams are present. Only one carries credentials in plaintext.',penalty:5},
-      {no:2,text:'The suspicious stream contains a private key file transfer.',penalty:10}
+      {no:1,text:'Multiple protocols are present. Only one carries credentials in plaintext.',penalty:5},
+      {no:2,text:'Look at the higher-numbered TCP streams — that is where the data was transferred.',penalty:10}
     ],
     steps:[
-      {no:1, title:'Choose your tool',
-        instruction:'You need to analyse a .pcap file. Which industry-standard tool opens and dissects network captures? (one word)',
+      {no:1, title:'Tool',
+        instruction:'You have a packet capture. Which tool opens .pcap files? (one word)',
         placeholder:'tool', answer:'wireshark'},
-      {no:2, title:'Isolate the conversation',
-        instruction:'The capture contains several TCP streams. Which display filter will show only the 4th TCP stream? (include spaces)',
-        placeholder:'filter', answer:'tcp.stream eq 4'},
-      {no:3, title:'Identify the protocol',
-        instruction:'Inside that stream, credentials are being transferred in clear text. Which protocol is responsible? (3 letters)',
+      {no:2, title:'Stream',
+        instruction:'Opened in {prev}. One TCP stream contains the exfiltrated data. Which display filter isolates it? (include spaces)',
+        placeholder:'display filter', answer:'tcp.stream eq 3'},
+      {no:3, title:'Protocol',
+        instruction:'{prev} reveals a plaintext transfer. Which protocol was used? (3 letters)',
         placeholder:'xxx', answer:'ftp'},
-      {no:4, title:'Identify the transferred key',
-        instruction:'Alongside credentials, the transfer includes a private key. What type of private key is it? (3 letters)',
-        placeholder:'xxx', answer:'ssh'},
-      {no:5, title:'Verify the key',
-        instruction:'Before using the recovered key, you must validate it. Which command-line utility inspects and verifies SSH keys? (one word)',
-        placeholder:'command', answer:'ssh-keygen'},
-      {no:6, title:'Capture the flag',
-        instruction:'Extract the flag that was hidden in the stream metadata and submit it.',
-        placeholder:'CTF{...}', answer:'CTF{p4ck3t_f0r3ns1cs_k3y_r3c0v3r3d}'}
+      {no:4, title:'Artifact',
+        instruction:'{prev} transferred a sensitive file. What is its filename?',
+        placeholder:'filename', answer:'id_rsa'},
+      {no:5, title:'Recover the key',
+        instruction:'Extract the {prev} private key from the captured stream. The key authenticates as a specific Nova Tech user. Which user does it belong to? (just the username)',
+        placeholder:'username', answer:'developer'}
     ]
   },
   {
     id:6, stage:6, title:'Crown Jewels (Root Access)', domain:'Linux System', difficulty:'Hard', points:400,
-    tools:'ssh, find, cat, LinPEAS',
-    description:'You have recovered an SSH private key from the packet capture. Log into the Nova Tech server as the developer user, then escalate privileges to root to retrieve the master flag.',
+    tools:'ssh, find, strings, cat, LinPEAS',
+    description:'You have recovered an SSH private key from the packet capture. The insider left a backdoor on the target system before disconnecting. Log in, find it, and escalate to root to retrieve the master flag.',
     flag:'CTF{r00t_pr1v_3sc_c4pst0n3_m4st3r}',
     hints:[
-      {no:1,text:'High-privilege binaries with the SUID bit set are often misconfigured.',penalty:5},
-      {no:2,text:'A misconfigured SUID binary that calls another program without a full path can be hijacked.',penalty:10}
+      {no:1,text:'SUID binaries run with elevated privileges. One of them is not part of a standard system.',penalty:5},
+      {no:2,text:'Inspect the unusual binary — look at how it invokes other programs.',penalty:10}
     ],
     steps:[
-      {no:1, title:'Access the server',
-        instruction:'Using the SSH key recovered in Stage 5, log into the target host. Which user account is the key associated with? (one word)',
+      {no:1, title:'Authenticate',
+        instruction:'Use the SSH key recovered in Stage 5 to log into the target host. Which user account is the key associated with?',
         placeholder:'username', answer:'developer'},
       {no:2, title:'Enumerate privileged binaries',
-        instruction:'Search the filesystem for executables running with elevated (SUID) permissions. Which standard command locates SUID binaries? (one word, 4 letters)',
+        instruction:'Logged in as {prev}. Now search the filesystem for SUID binaries — executables that run with elevated privileges. Which standard command locates them? (one word, 4 letters)',
         placeholder:'command', answer:'find'},
-      {no:3, title:'Identify the target',
-        instruction:'One of the SUID binaries is unusual and not part of the default system. What is its filename?',
-        placeholder:'filename', answer:'syscheck'},
-      {no:4, title:'Classify the weakness',
-        instruction:'The binary calls another program using a relative path. What class of attack exploits this misconfiguration? (two words)',
-        placeholder:'two words', answer:'path hijacking'},
-      {no:5, title:'Read the final target',
-        instruction:'After successfully escalating to root, which command reads the contents of /root/root.txt? (one word)',
+      {no:3, title:'Identify the backdoor',
+        instruction:'Your {prev} search reveals multiple SUID binaries. Most are standard system tools. Which one is NOT part of a default Linux system?',
+        placeholder:'binary name', answer:'syscheck'},
+      {no:4, title:'Study the binary',
+        instruction:'Run {prev} and inspect its strings. Which standard binary does it invoke internally without using an absolute path?',
         placeholder:'command', answer:'cat'},
-      {no:6, title:'Capture the master flag',
-        instruction:'Retrieve and submit the root flag.',
+      {no:5, title:'Classify the attack',
+        instruction:'Because {prev} is called without a full path, the binary relies on the PATH variable. What class of attack exploits this? (two words)',
+        placeholder:'two words', answer:'path hijacking'},
+      {no:6, title:'Locate the target',
+        instruction:'You have everything needed to escalate. What is the full path of the file containing the root flag?',
+        placeholder:'/path/to/file', answer:'/root/root.txt'},
+      {no:7, title:'Capture the master flag',
+        instruction:'You now know the target path. Hijack the PATH to escalate to root and read the flag file. Submit it here to complete the challenge.',
         placeholder:'CTF{...}', answer:'CTF{r00t_pr1v_3sc_c4pst0n3_m4st3r}'}
     ]
   }
@@ -224,16 +226,6 @@ function auth(req, res, next) {
     req.user = rows[0];
     next();
   });
-}
-
-/* ---------- Helper: compute awarded points ---------- */
-function computeAwarded(ch, unlockedHintNos) {
-  let penalty = 0;
-  ch.hints.forEach(h => {
-    if (unlockedHintNos.includes(h.no)) penalty += h.penalty;
-  });
-  const awarded = Math.max(0, ch.points - penalty);
-  return { awarded, penalty };
 }
 
 /* ---------- Auth routes ---------- */
@@ -287,7 +279,31 @@ app.get('/api/challenges', auth, (req, res) => {
         const list = CHALLENGES.map(c => {
           const isSolved = solvedIds.includes(c.id);
           const isLocked = c.stage > 1 && !solvedIds.includes(c.id - 1);
+          const completedList = stepMap[c.id] || [];
           const awarded = isSolved ? (solvedMap[c.id] || 0) : 0;
+
+          // Build steps with {prev} substitution
+          const chSteps = c.steps.map((s, idx) => {
+            const prevStep = idx > 0 ? c.steps[idx - 1] : null;
+            const prevDone = !prevStep || completedList.includes(prevStep.no);
+
+            let instruction = s.instruction;
+            if (instruction.includes('{prev}')) {
+              if (prevDone && prevStep) {
+                instruction = instruction.replace('{prev}', prevStep.answer);
+              } else {
+                instruction = '🔒 Complete the previous step to reveal this instruction.';
+              }
+            }
+
+            return {
+              no: s.no,
+              title: s.title,
+              instruction,
+              placeholder: s.placeholder
+            };
+          });
+
           return {
             ...c,
             hints: c.hints.map(h => ({
@@ -295,10 +311,8 @@ app.get('/api/challenges', auth, (req, res) => {
               unlocked: (unlockedMap[c.id] || []).includes(h.no),
               text: (unlockedMap[c.id] || []).includes(h.no) ? h.text : null
             })),
-            steps: c.steps.map(s => ({
-              no: s.no, title: s.title, instruction: s.instruction, placeholder: s.placeholder
-            })),
-            completedSteps: stepMap[c.id] || [],
+            steps: chSteps,
+            completedSteps: completedList,
             solved: isSolved,
             locked: isLocked,
             awarded: awarded,
@@ -311,6 +325,7 @@ app.get('/api/challenges', auth, (req, res) => {
   });
 });
 
+/* --- Step verification with auto-complete on final step --- */
 app.post('/api/challenges/:id/steps/:no/verify', auth, (req, res) => {
   const cid = parseInt(req.params.id, 10);
   const no = parseInt(req.params.no, 10);
@@ -324,12 +339,66 @@ app.post('/api/challenges/:id/steps/:no/verify', auth, (req, res) => {
   const expected = step.answer.toLowerCase();
   if (clean !== expected) return res.json({ correct: false, message: 'Incorrect answer. Try again.' });
 
+  // Save step progress
   db.query('INSERT IGNORE INTO step_progress (user_id, challenge_id, step_no) VALUES (?,?,?)',
     [req.user.id, cid, no]);
-  res.json({ correct: true });
+
+  // Is this the last step?
+  const isLastStep = no === ch.steps[ch.steps.length - 1].no;
+
+  if (!isLastStep) {
+    return res.json({ correct: true });
+  }
+
+  // For stages 1-4 and 6: last step IS the flag → auto-complete + award
+  // For stage 5: last step is 'developer', flag must be submitted separately
+  const lastStepAnswer = ch.steps[ch.steps.length - 1].answer;
+  const lastStepIsFlag = lastStepAnswer.toLowerCase() === ch.flag.toLowerCase();
+
+  if (!lastStepIsFlag) {
+    // Stage 5 pattern — do NOT auto-complete; wait for flag submission
+    return res.json({ correct: true, flagRequired: true });
+  }
+
+  // Auto-complete for other stages
+  db.query('SELECT hint_no FROM unlocked_hints WHERE user_id = ? AND challenge_id = ?',
+    [req.user.id, cid], (err, hintRows) => {
+      const unlockedNos = (hintRows || []).map(r => r.hint_no);
+      let penalty = 0;
+      ch.hints.forEach(h => {
+        if (unlockedNos.includes(h.no)) penalty += h.penalty;
+      });
+      const awarded = Math.max(0, ch.points - penalty);
+
+      db.query('SELECT * FROM submissions WHERE user_id = ? AND challenge_id = ?',
+        [req.user.id, cid], (err2, rows) => {
+          if (rows && rows.length > 0) {
+            return res.json({
+              correct: true,
+              challengeComplete: true,
+              alreadySolved: true,
+              awarded: rows[0].awarded || ch.points,
+              basePoints: ch.points,
+              hintPenalty: ch.points - (rows[0].awarded || ch.points)
+            });
+          }
+
+          db.query('INSERT INTO submissions (user_id, challenge_id, awarded) VALUES (?,?,?)',
+            [req.user.id, cid, awarded]);
+          db.query('UPDATE users SET score = score + ? WHERE id = ?', [awarded, req.user.id]);
+
+          res.json({
+            correct: true,
+            challengeComplete: true,
+            awarded,
+            basePoints: ch.points,
+            hintPenalty: penalty
+          });
+        });
+    });
 });
 
-/* --- FIXED SUBMIT: subtract hint penalties --- */
+/* --- Flag submission (used by Stage 5) --- */
 app.post('/api/challenges/:id/submit', auth, (req, res) => {
   const id = parseInt(req.params.id, 10);
   const { flag } = req.body;
@@ -337,13 +406,15 @@ app.post('/api/challenges/:id/submit', auth, (req, res) => {
   if (!ch) return res.status(404).json({ error: 'Not found' });
   if (ch.flag !== flag) return res.json({ correct: false, message: 'Incorrect flag. Try again.' });
 
-  // 1. Look up which hints the user unlocked
   db.query('SELECT hint_no FROM unlocked_hints WHERE user_id = ? AND challenge_id = ?',
     [req.user.id, id], (err, hintRows) => {
       const unlockedNos = (hintRows || []).map(r => r.hint_no);
-      const { awarded, penalty } = computeAwarded(ch, unlockedNos);
+      let penalty = 0;
+      ch.hints.forEach(h => {
+        if (unlockedNos.includes(h.no)) penalty += h.penalty;
+      });
+      const awarded = Math.max(0, ch.points - penalty);
 
-      // 2. Check if already submitted
       db.query('SELECT * FROM submissions WHERE user_id = ? AND challenge_id = ?',
         [req.user.id, id], (err2, rows) => {
           if (rows && rows.length > 0) {
@@ -357,7 +428,6 @@ app.post('/api/challenges/:id/submit', auth, (req, res) => {
             });
           }
 
-          // 3. Insert submission with computed awarded amount + update score
           db.query('INSERT INTO submissions (user_id, challenge_id, awarded) VALUES (?,?,?)',
             [req.user.id, id, awarded]);
           db.query('UPDATE users SET score = score + ? WHERE id = ?', [awarded, req.user.id]);
