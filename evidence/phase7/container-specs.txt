@@ -1,0 +1,4 @@
+/ctfd: mem=536870912B cpu=1000000000nc secopt=<no value>
+/web: mem=536870912B cpu=1000000000nc secopt=[no-new-privileges:true]
+/db: mem=536870912B cpu=1000000000nc secopt=[no-new-privileges:true]
+/linuxbox: mem=268435456B cpu=500000000nc secopt=<no value>

@@ -1,0 +1,5 @@
+Chain FORWARD (policy DROP 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+26135  188M DOCKER-USER  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+26135  188M DOCKER-FORWARD  all  --  *      *       0.0.0.0/0            0.0.0.0/0           
+    0     0 DROP       all  --  enp0s8 enp0s3  0.0.0.0/0            0.0.0.0/0           

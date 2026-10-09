@@ -9,6 +9,14 @@ services:
     volumes:
       - ctfd_data:/var/lib/ctfd
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
 
   web:
     build: ./web
@@ -21,6 +29,23 @@ services:
     depends_on:
       - db
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+      - NET_BIND_SERVICE
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
 
   db:
     image: mysql:8.0
@@ -35,6 +60,16 @@ services:
     volumes:
       - db_data:/var/lib/mysql
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
 
   linuxbox:
     build: ./linuxbox
@@ -44,6 +79,17 @@ services:
     networks:
       - ctf_public
     restart: unless-stopped
+    # NOTE: no-new-privileges and cap_drop are DELIBERATELY OMITTED here.
+    # Stage 6 requires the SUID binary /usr/local/bin/syscheck to run
+    # with elevated privileges. Blocking new privileges would break the challenge.
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
 
 networks:
   ctf_public:
