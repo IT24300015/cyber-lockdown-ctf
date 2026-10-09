@@ -6,41 +6,74 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-/* ---------- MySQL ---------- */
+//* ---------- MySQL ---------- */
 const db = mysql.createPool({
   host: 'db', user: 'ctfuser', password: 'ctf_pass', database: 'ctfdb',
   waitForConnections: true, connectionLimit: 10
 });
 
-db.query(`CREATE TABLE IF NOT EXISTS users (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  username VARCHAR(50) UNIQUE,
-  email VARCHAR(100) UNIQUE,
-  password VARCHAR(100),
-  score INT DEFAULT 0
-)`);
+/* ---------- Ensure tables exist (with retry) ---------- */
+function initSchema(attempt = 1) {
+  const queries = [
+    `CREATE TABLE IF NOT EXISTS users (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      username VARCHAR(50) UNIQUE,
+      email VARCHAR(100) UNIQUE,
+      password VARCHAR(100),
+      score INT DEFAULT 0
+    )`,
+    `CREATE TABLE IF NOT EXISTS submissions (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT, challenge_id INT,
+      awarded INT DEFAULT 0,
+      solved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY unique_sub (user_id, challenge_id)
+    )`,
+    `ALTER TABLE submissions ADD COLUMN awarded INT DEFAULT 0`,
+    `CREATE TABLE IF NOT EXISTS unlocked_hints (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT, challenge_id INT, hint_no INT,
+      UNIQUE KEY unique_hint (user_id, challenge_id, hint_no)
+    )`,
+    `CREATE TABLE IF NOT EXISTS step_progress (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      user_id INT, challenge_id INT, step_no INT,
+      UNIQUE KEY unique_step (user_id, challenge_id, step_no)
+    )`
+  ];
 
-db.query(`CREATE TABLE IF NOT EXISTS submissions (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  user_id INT, challenge_id INT,
-  awarded INT DEFAULT 0,
-  solved_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE KEY unique_sub (user_id, challenge_id)
-)`);
+  let pending = queries.length;
+  let retryNeeded = false;
 
-db.query(`ALTER TABLE submissions ADD COLUMN awarded INT DEFAULT 0`, () => {});
+  queries.forEach((q) => {
+    db.query(q, (err) => {
+      if (err) {
+        // Ignore "Duplicate column" — column already exists (schema OK)
+        if (err.code === 'ER_DUP_FIELDNAME' || /Duplicate column/i.test(err.message)) {
+          // no-op
+        } else {
+          retryNeeded = true;
+          console.error(`[db] query failed: ${err.message}`);
+        }
+      }
+      pending--;
+      if (pending === 0) {
+        if (retryNeeded) {
+          if (attempt >= 30) {
+            console.error('[db] init failed after 30 attempts. Continuing anyway.');
+          } else {
+            console.log(`[db] init attempt ${attempt} failed, retrying in 2s...`);
+            setTimeout(() => initSchema(attempt + 1), 2000);
+          }
+        } else {
+          console.log('[db] schema ready');
+        }
+      }
+    });
+  });
+}
 
-db.query(`CREATE TABLE IF NOT EXISTS unlocked_hints (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  user_id INT, challenge_id INT, hint_no INT,
-  UNIQUE KEY unique_hint (user_id, challenge_id, hint_no)
-)`);
-
-db.query(`CREATE TABLE IF NOT EXISTS step_progress (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  user_id INT, challenge_id INT, step_no INT,
-  UNIQUE KEY unique_step (user_id, challenge_id, step_no)
-)`);
+initSchema();
 
 /* ---------- Challenges ---------- */
 const CHALLENGES = [

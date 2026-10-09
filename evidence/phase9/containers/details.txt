@@ -1,0 +1,27 @@
+=== Container Status ===
+NAME       IMAGE              COMMAND                  SERVICE    CREATED          STATUS                    PORTS
+ctfd       ctfd/ctfd:latest   "/opt/CTFd/docker-en…"   ctfd       38 minutes ago   Up 28 minutes             0.0.0.0:8000->8000/tcp, [::]:8000->8000/tcp
+db         mysql:8.0          "docker-entrypoint.s…"   db         28 minutes ago   Up 28 minutes (healthy)   3306/tcp, 33060/tcp
+linuxbox   ctf-box-linuxbox   "/usr/sbin/sshd -D -e"   linuxbox   5 minutes ago    Up 5 minutes              0.0.0.0:22->22/tcp, [::]:22->22/tcp
+web        ctf-box-web        "docker-entrypoint.s…"   web        5 minutes ago    Up 5 minutes              0.0.0.0:80->3000/tcp, [::]:80->3000/tcp
+
+=== Container Users ===
+--- ctfd ---
+uid=1001(ctfd) gid=1001(ctfd) groups=1001(ctfd)
+--- web ---
+uid=1000(node) gid=1000(node) groups=1000(node)
+--- db (PID 1 process) ---
+Name:	mysqld
+Uid:	999	999	999	999
+--- linuxbox ---
+uid=0(root) gid=0(root) groups=0(root)
+
+=== Resource Limits ===
+--- ctfd ---
+Memory: 536870912B | CPU: 1000000000nc | SecurityOpt: <no value> | CapDrop: <no value>
+--- web ---
+Memory: 536870912B | CPU: 1000000000nc | SecurityOpt: [no-new-privileges:true] | CapDrop: [ALL]
+--- db ---
+Memory: 536870912B | CPU: 1000000000nc | SecurityOpt: [no-new-privileges:true] | CapDrop: <no value>
+--- linuxbox ---
+Memory: 268435456B | CPU: 500000000nc | SecurityOpt: <no value> | CapDrop: <no value>

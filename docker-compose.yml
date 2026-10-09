@@ -18,6 +18,36 @@ services:
           cpus: '0.25'
           memory: 128M
 
+  db:
+    image: mysql:8.0
+    container_name: db
+    environment:
+      MYSQL_ROOT_PASSWORD: ctf_root_pass
+      MYSQL_DATABASE: ctfdb
+      MYSQL_USER: ctfuser
+      MYSQL_PASSWORD: ctf_pass
+    networks:
+      - ctf_internal
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pctf_root_pass"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
   web:
     build: ./web
     container_name: web
@@ -27,7 +57,8 @@ services:
       - ctf_public
       - ctf_internal
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
@@ -47,30 +78,6 @@ services:
           cpus: '0.25'
           memory: 128M
 
-  db:
-    image: mysql:8.0
-    container_name: db
-    environment:
-      MYSQL_ROOT_PASSWORD: ctf_root_pass
-      MYSQL_DATABASE: ctfdb
-      MYSQL_USER: ctfuser
-      MYSQL_PASSWORD: ctf_pass
-    networks:
-      - ctf_internal
-    volumes:
-      - db_data:/var/lib/mysql
-    restart: unless-stopped
-    security_opt:
-      - no-new-privileges:true
-    deploy:
-      resources:
-        limits:
-          cpus: '1.0'
-          memory: 512M
-        reservations:
-          cpus: '0.25'
-          memory: 256M
-
   linuxbox:
     build: ./linuxbox
     container_name: linuxbox
@@ -79,9 +86,6 @@ services:
     networks:
       - ctf_public
     restart: unless-stopped
-    # NOTE: no-new-privileges and cap_drop are DELIBERATELY OMITTED here.
-    # Stage 6 requires the SUID binary /usr/local/bin/syscheck to run
-    # with elevated privileges. Blocking new privileges would break the challenge.
     deploy:
       resources:
         limits:

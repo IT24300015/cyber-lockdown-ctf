@@ -1,0 +1,35 @@
+=== Reset Script Test ===
+Breaking environment...
+Running reset_box.sh...
+[0;36m============================================================
+  CYBER LOCKDOWN — RESET (FAST)
+============================================================[0m
+[1;33m[1/3][0m Wiping DB + recreating containers (in parallel)...
+[1;33m[2/3][0m Waiting for services to stabilise...
+[1;33m[3/3][0m Verifying...
+[0;32m  ✓ Web running[0m
+[0;32m  ✓ SSH running[0m
+
+[0;32m============================================================
+  RESET COMPLETE — 18s
+============================================================[0m
+  CTFd preserved: yes
+  Progress wiped: yes
+  All 6 stages reset
+
+=== Reset completed in 19s ===
+
+=== Verification After Reset ===
+--- Root flag ---
+CTF{r00t_pr1v_3sc_c4pst0n3_m4st3r}
+--- SUID binary ---
+-rwsr-xr-x 1 root root 16176 Oct  9 19:34 /usr/local/bin/syscheck
+--- Git repo zip ---
+-rw-rw-r--    1 node     node         23110 Oct  9 05:03 /app/static/git-repo.zip
+--- DB tables ---
+mysql: [Warning] Using a password on the command line interface can be insecure.
+Tables_in_ctfdb
+step_progress
+submissions
+unlocked_hints
+users

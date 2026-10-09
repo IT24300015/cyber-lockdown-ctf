@@ -1,0 +1,46 @@
+=== Stage 1 — Git Repo ===
+-rw-rw-r-- 1 user1 user1 23K Oct  9 05:03 /home/user1/ctf-box/web/static/git-repo.zip
+Commits in repo:
+e180f69 Remove sensitive config file before public push
+41a6960 Add staging environment configuration
+2f82236 Initial commit for staging config
+
+=== Stage 2 — ID Badge ===
+-rw-rw-r-- 1 user1 user1 13K Oct  9 14:31 /home/user1/ctf-box/web/static/forensics/badge.jpg
+Forensics site files:
+total 48
+drwxrwxr-x 2 user1 user1  4096 Oct  9 06:21 .
+drwxrwxr-x 5 user1 user1  4096 Oct  9 19:26 ..
+-rw-rw-r-- 1 user1 user1 13112 Oct  9 14:31 badge.jpg
+-rw-rw-r-- 1 user1 user1  3153 Oct  9 14:26 index.html
+-rw-rw-r-- 1 user1 user1  8074 Oct  9 14:28 style.css
+-rw-rw-r-- 1 user1 user1  9068 Oct  9 14:26 tools.js
+
+=== Stage 3 — Staging Portal ===
+total 24
+drwxrwxr-x 2 user1 user1 4096 Oct  9 15:17 .
+drwxrwxr-x 5 user1 user1 4096 Oct  9 19:26 ..
+-rw-rw-r-- 1 user1 user1 7889 Oct  9 15:17 admin.html
+-rw-rw-r-- 1 user1 user1 3914 Oct  9 17:04 index.html
+-rw-rw-r-- 1 user1 user1 3630 Oct  9 15:16 style.css
+
+=== Stage 4 — Encrypted File + Zip ===
+-rw-rw-r-- 1 user1 user1 780 Oct  9 17:22 /home/user1/ctf-box/web/static/exfil.enc
+780 /home/user1/ctf-box/web/static/exfil.enc
+-rw-rw-r-- 1 user1 user1 1.8K Oct  9 19:26 /home/user1/ctf-box/web/static/stage4_evidence.zip
+Archive:  /home/user1/ctf-box/web/static/stage4_evidence.zip
+  Length      Date    Time    Name
+---------  ---------- -----   ----
+      780  2026-10-09 17:22   exfil.enc
+     2089  2026-10-09 19:21   decrypt.py
+---------                     -------
+     2869                     2 files
+
+=== Stage 5 — PCAP ===
+-rw-rw-r-- 1 user1 user1 6.8K Oct  9 03:07 /home/user1/ctf-box/web/static/incident.pcap
+
+=== Stage 6 — SSH Container ===
+-rw------- 1 root root 35 Oct  9 19:34 /root/root.txt
+CTF{r00t_pr1v_3sc_c4pst0n3_m4st3r}
+-rwsr-xr-x 1 root root 16176 Oct  9 19:34 /usr/local/bin/syscheck
+uid=1000(developer) gid=1000(developer) groups=1000(developer)

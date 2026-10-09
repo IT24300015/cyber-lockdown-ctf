@@ -1,0 +1,183 @@
+=== Git Log ===
+400bf04 Phase 7: Isolation and security controls
+d848df8 Phase 2, 3, 4: Docker Compose + CTFd + Node.js/React portal
+91304e4 Phase 5: SSH/Linux container + real PCAP
+218ba54 Initial commit: Cyber Lockdown CTF Play Box
+
+=== Files Tracked ===
+.gitignore
+docker-compose.yml
+evidence/phase7/README.md
+evidence/phase7/container-specs.txt
+evidence/phase7/iptables.txt
+evidence/phase7/route.txt
+evidence/phase7/user-ctfd.txt
+evidence/phase7/user-db.txt
+evidence/phase7/user-linuxbox.txt
+evidence/phase7/user-web.txt
+linuxbox/Dockerfile
+linuxbox/keys/id_rsa
+linuxbox/keys/id_rsa.pub
+linuxbox/setup.sh
+linuxbox/syscheck.c
+scripts/generate_badge.py
+scripts/generate_encrypted_file.py
+scripts/generate_pcap.py
+web/Dockerfile
+web/backend/challenges/index.js
+web/backend/challenges/stage1.js
+web/backend/package.json
+web/backend/server.js
+web/frontend/index.html
+web/frontend/package.json
+web/frontend/public/nova-tech.png
+web/frontend/src/App.jsx
+web/frontend/src/api.js
+web/frontend/src/main.jsx
+web/frontend/src/styles.css
+web/frontend/vite.config.js
+web/static/corrupted_log.bin
+web/static/decrypt.py
+web/static/exfil.enc
+web/static/forensics/badge.jpg
+web/static/forensics/index.html
+web/static/forensics/style.css
+web/static/forensics/tools.js
+web/static/git-repo.zip
+web/static/incident.pcap
+web/static/stage4_evidence.zip
+web/static/staging/admin.html
+web/static/staging/index.html
+web/static/staging/style.css
+
+=== Recent Commits (detailed) ===
+commit 400bf04f544603ac3a23095dc89a4730068f2775
+Author: Cyber-Lokdoun-CTF <IT24300015@my.sliit.lk>
+Date:   Fri Oct 9 20:22:47 2026 +0000
+
+    Phase 7: Isolation and security controls
+    
+    - Resource limits on all containers (512M/256M)
+    - no-new-privileges on web/db/ctfd
+    - Capability drops on web (ALL minus CHOWN/SETUID/SETGID/NET_BIND_SERVICE)
+    - Linuxbox retains root + SUID for Stage 6
+    - Web container now runs as node (uid=1000)
+    - DB runs as mysql (uid=999)
+    - Evidence files in evidence/phase7/
+    - All 6 stages still playable after hardening
+
+ docker-compose.yml                  | 48 +++++++++++++++++++++++++-
+ evidence/phase7/README.md           | 69 +++++++++++++++++++++++++++++++++++++
+ evidence/phase7/container-specs.txt |  4 +++
+ evidence/phase7/iptables.txt        |  5 +++
+ evidence/phase7/route.txt           |  6 ++++
+ evidence/phase7/user-ctfd.txt       |  1 +
+ evidence/phase7/user-db.txt         |  1 +
+ evidence/phase7/user-linuxbox.txt   |  1 +
+ evidence/phase7/user-web.txt        |  1 +
+ web/Dockerfile                      | 15 +++++++-
+ 10 files changed, 149 insertions(+), 2 deletions(-)
+
+commit d848df81ad641885c5fda43a8ae0588f0210dc9e
+Author: Cyber-Lokdoun-CTF <IT24300015@my.sliit.lk>
+Date:   Fri Oct 9 19:47:25 2026 +0000
+
+    Phase 2, 3, 4: Docker Compose + CTFd + Node.js/React portal
+    
+    Phase 2 — Docker Compose skeleton:
+    - 4 services: ctfd, web, db, linuxbox
+    - Two networks: ctf_public (external), ctf_internal (web+db only)
+    - Ports: 80 (portal), 22 (SSH), 8000 (CTFd)
+    
+    Phase 3 — CTFd scoring platform:
+    - All 6 challenges configured with flags, hints, dependencies
+    - Flag format validated on submission
+    
+    Phase 4 — Node.js/React TryHackMe-style portal:
+    - Login/register with JWT token
+    - Dashboard with 6 stages and progress bar
+    - Room selection card (Nova Tech Solutions)
+    - Full-page challenge view with step-by-step verification
+    - {prev} chaining — each step uses the previous answer
+    - 3-level hint system (-5/-10/-15)
+    - Celebration popup with point breakdown
+    - Scoreboard
+    - Auto-complete on final step
+    - MySQL backend with SQL queries
+    - Progressive unlocking (Stage N unlocks Stage N+1)
+
+ scripts/generate_badge.py          | 150 +++++++++++++++++
+ scripts/generate_encrypted_file.py |  66 ++++++++
+ web/backend/server.js              | 180 +++++++++++++-------
+ web/frontend/src/App.jsx           |  20 ++-
+ web/frontend/src/styles.css        |   3 +
+ web/static/decrypt.py              |  73 +++++++++
+ web/static/exfil.enc               |  13 +-
+ web/static/forensics/badge.jpg     | Bin 0 -> 13112 bytes
+ web/static/forensics/index.html    |  90 ++++++++++
+ web/static/forensics/style.css     | 325 +++++++++++++++++++++++++++++++++++++
+ web/static/forensics/tools.js      | 251 ++++++++++++++++++++++++++++
+ web/static/stage4_evidence.zip     | Bin 0 -> 1766 bytes
+ web/static/staging/admin.html      | 234 ++++++++++++++++++++++++++
+ web/static/staging/index.html      | 104 ++++++++++++
+ web/static/staging/style.css       | 207 +++++++++++++++++++++++
+ 15 files changed, 1654 insertions(+), 62 deletions(-)
+
+commit 91304e45713a8e789c0ea9084160f2b1a5f5e210
+Author: Cyber-Lokdoun-CTF <IT24300015@my.sliit.lk>
+Date:   Fri Oct 9 05:14:11 2026 +0000
+
+    Phase 5: SSH/Linux container + real PCAP
+    
+    - linuxbox: SSH server with developer user
+    - SUID binary /usr/local/bin/syscheck
+    - Root flag at /root/root.txt
+    - Real incident.pcap with SSH key in stream 3
+    - Chained steps for Stage 5 and Stage 6
+
+ linuxbox/Dockerfile      |  39 ++++++++-
+ linuxbox/keys/id_rsa     |  27 +++++++
+ linuxbox/keys/id_rsa.pub |   1 +
+ linuxbox/setup.sh        |  19 +++++
+ linuxbox/syscheck.c      |  17 ++++
+ scripts/generate_pcap.py | 137 ++++++++++++++++++++++++++++++++
+ web/backend/server.js    | 200 ++++++++++++++++++++++++++++++++---------------
+ web/frontend/src/App.jsx |  42 +++++++---
+ web/static/git-repo.zip  | Bin 23308 -> 23110 bytes
+ web/static/incident.pcap | Bin 16 -> 6918 bytes
+ 10 files changed, 402 insertions(+), 80 deletions(-)
+
+commit 218ba54f049e64606ed09f933b9e734787bd6f98
+Author: Cyber-Lokdoun-CTF <IT24300015@my.sliit.lk>
+Date:   Thu Oct 8 18:44:57 2026 +0000
+
+    Initial commit: Cyber Lockdown CTF Play Box
+    
+    - Node.js/React portal with 6-stage dashboard
+    - SQL backend with MySQL
+    - Stage 1 (OSINT) fully working
+    - Docker Compose setup for web, db, ctfd, linuxbox
+    - Hint penalty system
+    - Step-by-step challenge verification
+
+ .gitignore                        |  42 ++++
+ docker-compose.yml                |  56 +++++
+ linuxbox/Dockerfile               |   2 +
+ web/Dockerfile                    |  16 ++
+ web/backend/challenges/index.js   |   5 +
+ web/backend/challenges/stage1.js  |  22 ++
+ web/backend/package.json          |  11 +
+ web/backend/server.js             | 414 ++++++++++++++++++++++++++++++++
+ web/frontend/index.html           |  12 +
+ web/frontend/package.json         |   9 +
+ web/frontend/public/nova-tech.png | Bin 0 -> 179614 bytes
+ web/frontend/src/App.jsx          | 466 ++++++++++++++++++++++++++++++++++++
+ web/frontend/src/api.js           |  11 +
+ web/frontend/src/main.jsx         |   5 +
+ web/frontend/src/styles.css       | 489 ++++++++++++++++++++++++++++++++++++++
+ web/frontend/vite.config.js       |   7 +
+ web/static/corrupted_log.bin      |   1 +
+ web/static/exfil.enc              |   1 +
+ web/static/git-repo.zip           | Bin 0 -> 23308 bytes
+ web/static/incident.pcap          |   1 +
+ 20 files changed, 1570 insertions(+)
