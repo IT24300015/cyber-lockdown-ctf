@@ -52,7 +52,8 @@ const CHALLENGES = [
     resource:{ label:'Download Git Repo', url:'/challenge-files/git-repo.zip', filename:'git-repo.zip' },
     hints:[
       {no:1,text:'The repository history may contain information the current files do not.',penalty:5},
-      {no:2,text:'Deleted files are still recoverable from older commits.',penalty:10}
+      {no:2,text:'Deleted files are still recoverable from older commits.',penalty:10},
+      {no:3,text:'The flag was written next to the staging URL in the same deleted file. Run "git log -p" and read every line of the removed file — not just the URL.',penalty:15}
     ],
     steps:[
       {no:1, title:'Explore the repository',
@@ -69,86 +70,107 @@ const CHALLENGES = [
         placeholder:'CTF{...}', answer:'CTF{0s1nt_r3p0_m3t4d4t4_l34k}'}
     ]
   },
-  {
+    {
     id:2, stage:2, title:'Corrupted Evidence', domain:'Forensics', difficulty:'Easy', points:150,
-    tools:'file, xxd, strings, Hex Editor',
-    description:'A damaged disk artifact was recovered from the staging server. Its header appears tampered with. Rebuild the file, and recover the artifact hidden inside.',
+    tools:'Browser-based forensic tools, Image Zoom, Base64 decoder',
+    description:'A Nova Tech workstation was recovered with a suspicious employee ID badge on it. The image looks ordinary, but the insider hid something in plain sight. Investigate the archive.',
     flag:'CTF{f0r3ns1c_h34d3r_r3p41r_2026}',
-    resource:{ label:'Download Corrupted File', url:'/challenge-files/corrupted_log.bin', filename:'corrupted_log.bin' },
+    resource:{
+      label:'Open Internal Archive',
+      url:'/forensics/',
+      external: true
+    },
     hints:[
-      {no:1,text:'Standard file utilities cannot recognise a file with a corrupted header.',penalty:5},
-      {no:2,text:'Every file format begins with specific magic bytes. Identify the correct ones.',penalty:10}
+      {no:1,text:'Some details are only visible when you look closely. Use the Image Zoom tool.',penalty:5},
+      {no:2,text:'Not everything is in the metadata. Some things are in the pixels.',penalty:10},
+      {no:3,text:'The employee username from the image unlocks their record in the Employee Lookup. The record returns a token. Decoding the token exposes a path. Investigate what the archive holds at that path.',penalty:15}
     ],
     steps:[
-      {no:1, title:'Identify the artifact',
-        instruction:'Download the corrupted file. Your first task is to determine what the file actually is. What does a standard file-inspection tool report as its type?',
-        placeholder:'file type', answer:'data'},
-      {no:2, title:'Examine the header',
-        instruction:'The file is not what it claims to be. Inspect its very first bytes with a hex tool. What are the first 4 bytes? (lowercase hex, no spaces)',
-        placeholder:'xxxxxxxx', answer:'89504e47'},
-      {no:3, title:'Recognise the format',
-        instruction:'Those 4 bytes are a well-known magic number. Which file format do they belong to? (3 letters)',
-        placeholder:'png', answer:'png'},
-      {no:4, title:'Prepare to extract',
-        instruction:'Once the header is repaired, the file must be mined for readable content. Which standard utility extracts human-readable text from a binary? (one word)',
-        placeholder:'command', answer:'strings'},
-      {no:5, title:'Capture the flag',
-        instruction:'After repairing the file, recover the flag that was hidden inside it. Submit it below.',
+      {no:1, title:'Examine the badge',
+        instruction:'Open the Nova Tech Internal Archive. A recovered employee ID badge is the only file. What is the employee ID number printed on the badge? (format NT-YYYY-NNNN)',
+        placeholder:'NT-2026-XXXX', answer:'NT-2026-0417'},
+      {no:2, title:'Look closer',
+        instruction:'The employee with ID {prev} hid a secondary credential inside the image itself. Use the Image Zoom tool and inspect the corners. What is the hidden username?',
+        placeholder:'username', answer:'auditr_2026'},
+      {no:3, title:'Access the archive',
+        instruction:'Use the username {prev} to search the internal archive. A base64-encoded token is returned. What is that token?',
+        placeholder:'base64 token', answer:'L3NlY3VyZS9hdWRpdC0yMDI2LmxvZw=='},
+      {no:4, title:'Retrieve the flag',
+        instruction:'Decode the {prev} to reveal a file path. Open the file at that path to find the flag. What is it?',
         placeholder:'CTF{...}', answer:'CTF{f0r3ns1c_h34d3r_r3p41r_2026}'}
     ]
   },
-  {
+    {
     id:3, stage:3, title:'Bypassing the Gatekeeper', domain:'Web Security', difficulty:'Moderate', points:200,
-    tools:'Burp Suite, SQLmap, Web Browser',
-    description:'The Nova Tech staging login portal does not safely handle user input. Exploit the flaw, bypass authentication, and access the admin session that holds the flag.',
+    tools:'Web Browser, Burp Suite, SQLmap',
+    description:'The insider leaked a staging URL in Stage 1. That portal uses unsafe SQL query construction — a flaw the insider was aware of. Bypass the login, access the admin panel, and recover the audit flag.',
     flag:'CTF{sqli_4uth_byp4ss_s3cur3_l0g1n}',
+    resource:{
+      label:'Open Staging Portal',
+      url:'/staging/',
+      external: true
+    },
+
     hints:[
-      {no:1,text:'Try entering unusual characters into the login form and observe the error responses.',penalty:5},
-      {no:2,text:'A generic always-true condition combined with a comment operator will defeat the check.',penalty:10}
+      {no:1,text:'The staging URL was already exposed in Stage 1. Revisit that config file if needed.',penalty:5},
+      {no:2,text:'The username field is where the flaw lives. Test with a single quote first.',penalty:10},
+      {no:3,text:'After the SQLi bypass, you land on the admin dashboard. The flag is not rendered on the page — inspect the HTML source code and look for internal developer comments.',penalty:15}
     ],
     steps:[
-      {no:1, title:'Classify the flaw',
-        instruction:'The login form lets user input reach the database query without sanitisation. Which class of attack does this enable? (4-letter abbreviation)',
-        placeholder:'xxxx', answer:'sqli'},
-      {no:2, title:'Confirm the flaw',
-        instruction:'To test whether input is breaking the query, what single character is typically inserted first?',
-        placeholder:'one character', answer:"'"},
+      {no:1, title:'Locate the portal',
+        instruction:'A leaked staging URL from an earlier stage points to an internal employee login page. What is the URL path of that portal? (just the path, no domain, no leading slash)',
+        placeholder:'path', answer:'staging'},
+      {no:2, title:'Identify the flaw',
+        instruction:'The portal at /{prev} accepts unsanitised input in the login form. Submit a single quote character in the username field and observe the response. What class of vulnerability does this reveal? (4-letter abbreviation)',
+        placeholder:'xxxx', answer:'sqli',
+        altAnswers: ['sql injection', 'sql-injection', 'sql-i']},
       {no:3, title:'Craft the bypass',
-        instruction:'To make the whole WHERE clause return true regardless of the password, which SQL condition is used? (no spaces, e.g. X=Y)',
-        placeholder:'x=y', answer:'1=1'},
-      {no:4, title:'Silence the rest',
-        instruction:'The rest of the query must be discarded. Which 2-character SQL comment operator does this?',
-        placeholder:'--', answer:'--'},
-      {no:5, title:'Capture the flag',
-        instruction:'Combine your payload, log in as admin, and submit the flag revealed on the dashboard.',
+        instruction:'You have confirmed {prev}. To make the login query always return a row, inject a condition that is always true and comment out the rest of the query. What is the complete payload you would enter in the username field? (format: \' OR 1=1 -- -)',
+        placeholder:'payload', answer:"' OR 1=1 -- -",
+        altAnswers: [
+          "' or 1=1 -- -",
+          "' OR 1=1 --",
+          "' or 1=1 --",
+          "' OR 1=1#",
+          "' or 1=1#",
+          "' OR 1=1 -- - ",
+          "admin' OR 1=1 -- -",
+          "admin' or 1=1 -- -",
+          "admin' OR 1=1#",
+          "' OR '1'='1' -- -",
+          "' or '1'='1' -- -"
+        ]},
+      {no:4, title:'Retrieve the audit flag',
+        instruction:'Enter the payload {prev} into the portal\'s login form with any password. Authentication is bypassed and you are taken to the staging admin dashboard. The flag is not shown on the page — inspect the page source to recover it.',
         placeholder:'CTF{...}', answer:'CTF{sqli_4uth_byp4ss_s3cur3_l0g1n}'}
     ]
   },
   {
     id:4, stage:4, title:'Unraveling the Cipher', domain:'Cryptography', difficulty:'Moderate', points:250,
-    tools:'CyberChef, Python 3, Web Browser',
-    description:'An encrypted log file was recovered from the staging server. The Nova Tech encryption scheme is intentionally weak, and the key has been carelessly leaked somewhere. Reverse the encryption and recover the stolen data.',
+    tools:'Python 3, pycryptodome, base64',
+    description:'An encrypted log file was recovered from the staging server. The insider built their own encryption pipeline — but they left the key behind. Reverse the encoding, identify the cipher, find the key, and recover the flag.',
     flag:'CTF{cr3pt0_w34k_k3y_d3cr2pt3d}',
-    resource:{ label:'Download Encrypted File', url:'/challenge-files/exfil.enc', filename:'exfil.enc' },
+    resource:[
+      { label:'Download Evidence Package', url:'/challenge-files/stage4_evidence.zip', filename:'stage4_evidence.zip' },
+      { label:'Open Staging Portal', url:'/staging/', external: true }
+    ],
     hints:[
-      {no:1,text:'The file contents look like printable characters, but they are not the real data.',penalty:5},
-      {no:2,text:'The encryption key was accidentally committed to the source code of the login page.',penalty:10}
+      {no:1,text:'The file looks like text but it is not plaintext. Standard encoding tools will identify the first layer.',penalty:5},
+      {no:2,text:'After decoding, the data comes in fixed 16-byte blocks — the signature of a well-known block cipher.',penalty:10},
+      {no:3,text:'The AES key is exposed as an HTML comment in the deployed staging portal (Stage 3). Revisit it and press Ctrl+U. A starter decryptor script is bundled with the evidence package.',penalty:15}
     ],
     steps:[
-      {no:1, title:'Identify the outer encoding',
-        instruction:'Open the exfil.enc file. The data is not raw ciphertext — it is wrapped in a common printable encoding. Which encoding scheme is it? (one word)',
+      {no:1, title:'Identify the encoding',
+        instruction:'Download the evidence package, extract it, and inspect the encrypted file. It is not raw binary — it is wrapped in a printable encoding. Which encoding scheme was used? (one word)',
         placeholder:'encoding', answer:'base64'},
-      {no:2, title:'Identify the inner cipher',
-        instruction:'After decoding, the result is a block of ciphertext. Which symmetric encryption algorithm was used? (3 letters)',
+      {no:2, title:'Identify the cipher',
+        instruction:'After decoding the {prev}, you are left with a block of binary ciphertext. The decoded bytes come in fixed-size blocks. Which symmetric cipher was used? (3 letters)',
         placeholder:'xxx', answer:'aes'},
-      {no:3, title:'Determine the key size',
-        instruction:'The algorithm was run with a specific key length. How many bits is that key? (a number)',
-        placeholder:'number', answer:'128'},
-      {no:4, title:'Locate the key',
-        instruction:'The key is not stored in the file itself. Where was it carelessly exposed by the developers? (one word)',
+      {no:3, title:'Locate the key',
+        instruction:'You have confirmed the use of {prev}. The insider left the encryption key exposed in the staging portal from Stage 3 — open it and inspect what the browser hides from ordinary visitors. Where do developers frequently leave sensitive strings that are visible only to those who inspect the page? (one word)',
         placeholder:'location', answer:'comment'},
-      {no:5, title:'Decrypt and submit',
-        instruction:'Locate the key, decrypt the ciphertext, and submit the flag it reveals.',
+      {no:4, title:'Decrypt and submit',
+        instruction:'The key was hidden in a {prev} on the staging portal (Stage 3). Extract the evidence package, supply the key you found, and run the bundled decryptor script against the encrypted file. Submit the flag it reveals.',
         placeholder:'CTF{...}', answer:'CTF{cr3pt0_w34k_k3y_d3cr2pt3d}'}
     ]
   },
@@ -160,7 +182,8 @@ const CHALLENGES = [
     resource:{ label:'Download PCAP', url:'/challenge-files/incident.pcap', filename:'incident.pcap' },
     hints:[
       {no:1,text:'Multiple protocols are present. Only one carries credentials in plaintext.',penalty:5},
-      {no:2,text:'Look at the higher-numbered TCP streams — that is where the data was transferred.',penalty:10}
+      {no:2,text:'Look at the higher-numbered TCP streams — that is where the data was transferred.',penalty:10},
+      {no:3,text:'Once you reassemble the suspicious stream, look at the very top of the recovered file. A comment block sits above the key — the flag is written inside it.',penalty:15}
     ],
     steps:[
       {no:1, title:'Tool',
@@ -187,7 +210,8 @@ const CHALLENGES = [
     flag:'CTF{r00t_pr1v_3sc_c4pst0n3_m4st3r}',
     hints:[
       {no:1,text:'SUID binaries run with elevated privileges. One of them is not part of a standard system.',penalty:5},
-      {no:2,text:'Inspect the unusual binary — look at how it invokes other programs.',penalty:10}
+      {no:2,text:'Inspect the unusual binary — look at how it invokes other programs.',penalty:10},
+      {no:3,text:'The root flag is stored in a file only root can read. Once you hijack the PATH, re-run the SUID binary — it will execute your fake command as root, which can print the flag file.',penalty:15}
     ],
     steps:[
       {no:1, title:'Authenticate',
@@ -337,7 +361,10 @@ app.post('/api/challenges/:id/steps/:no/verify', auth, (req, res) => {
 
   const clean = (answer || '').trim().toLowerCase();
   const expected = step.answer.toLowerCase();
-  if (clean !== expected) return res.json({ correct: false, message: 'Incorrect answer. Try again.' });
+  const alternatives = (step.altAnswers || []).map(a => a.toLowerCase());
+
+  const matches = clean === expected || alternatives.includes(clean);
+  if (!matches) return res.json({ correct: false, message: 'Incorrect answer. Try again.' });
 
   // Save step progress
   db.query('INSERT IGNORE INTO step_progress (user_id, challenge_id, step_no) VALUES (?,?,?)',
@@ -476,8 +503,45 @@ app.get('/api/scoreboard', auth, (req, res) => {
     });
 });
 
+/* ---------- Staging portal (Stage 3) ---------- */
+const sqliSessions = new Set();
+
+app.post('/api/staging-login', (req, res) => {
+  const { username, password } = req.body;
+
+  // Detect SQL injection attempt
+  const sqliPatterns = [
+    /'\s*or\s+1\s*=\s*1/i,
+    /'\s*or\s+'1'\s*=\s*'1/i,
+    /--/,
+    /#/,
+    /\/\*/,
+    /'\s*or\s+true/i,
+  ];
+  const isSqli = sqliPatterns.some(p => p.test(username));
+
+  if (isSqli) {
+    const token = 'admin_' + Math.random().toString(36).slice(2, 14);
+    sqliSessions.add(token);
+    return res.json({ success: true, adminUrl: '/staging/admin?token=' + token });
+  }
+
+  // Normal (non-SQLi) login attempt — always fails for the staging portal
+  return res.status(401).json({ success: false, error: 'Invalid credentials.' });
+});
+
+app.get('/staging/admin', (req, res) => {
+  const { token } = req.query;
+  if (!token || !sqliSessions.has(token)) {
+    return res.redirect('/staging/');
+  }
+  res.sendFile('/app/static/staging/admin.html');
+});
+
 /* ---------- Static + SPA ---------- */
+app.use('/staging', express.static('/app/static/staging'));
 app.use('/challenge-files', express.static('/app/static'));
+app.use('/forensics', express.static('/app/static/forensics'));
 app.use(express.static('/app/frontend/dist'));
 app.get('*', (req, res) => res.sendFile('/app/frontend/dist/index.html'));
 

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nova Tech Internal Archive</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="brand">
+            <div class="logo">N</div>
+            <div>
+                <h1>Nova Tech Solutions</h1>
+                <p class="subtitle">Internal Archive — Confidential</p>
+            </div>
+        </div>
+        <div class="status">
+            <span class="dot"></span> System Online
+        </div>
+    </header>
+
+    <div class="banner">
+        ⚠️ Authorized Personnel Only — All access is logged
+    </div>
+
+    <main>
+        <aside class="sidebar">
+            <h2>📁 Recovered Files</h2>
+            <ul id="fileList">
+                <li data-file="badge.jpg" class="active">badge.jpg</li>
+            </ul>
+            <p class="hint">1 file recovered from staging server</p>
+
+            <!-- SEARCH BOX -->
+            <div class="searchBox">
+                <h3>🔐 Employee Lookup</h3>
+                <p class="sub">Enter a username to retrieve records</p>
+                <input id="userSearch" type="text" placeholder="username" autocomplete="off" />
+                <button id="searchBtn">Search</button>
+                <div id="searchResult" class="searchResult"></div>
+            </div>
+        </aside>
+
+        <section class="workspace">
+            <!-- IMAGE -->
+            <div class="imageCard">
+                <div class="imageHeader">
+                    <span>📷 badge.jpg</span>
+                    <span class="badge">Employee ID</span>
+                </div>
+                <div class="imageBox" id="imageBox">
+                    <img id="badgeImage" src="badge.jpg" alt="Recovered Nova Tech ID badge" />
+                </div>
+                <div class="imageMeta">
+                    <span>Size: <b>~12 KB</b></span>
+                    <span>Format: <b>JPEG/PNG</b></span>
+                    <span>Recovered: <b>2026-10-08</b></span>
+                </div>
+            </div>
+
+            <!-- TOOLS -->
+            <div class="tools">
+                <h3>🔧 Investigation Tools</h3>
+                <div class="toolGrid">
+                    <button data-tool="exif">🔍 EXIF Viewer</button>
+                    <button data-tool="hex">📄 Hex Viewer</button>
+                    <button data-tool="base64">🧬 Base64 Decoder</button>
+                    <button data-tool="zoom">🔎 Image Zoom</button>
+                </div>
+            </div>
+
+            <!-- PREVIEW -->
+            <div class="preview">
+                <div class="previewHeader">
+                    <span id="previewTitle">Output</span>
+                    <button id="clearBtn" class="clearBtn">Clear</button>
+                </div>
+                <pre id="preview">Select a tool above to inspect the image...</pre>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <p>© 2026 Nova Tech Solutions · Forensics Workstation v1.4</p>
+    </footer>
+
+    <script src="tools.js"></script>
+</body>
+</html>

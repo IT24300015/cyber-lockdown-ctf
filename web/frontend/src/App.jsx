@@ -306,11 +306,25 @@ function ChallengePage({ c, list, onBack, onChange, onOpenStage }) {
       {c.resource && (
         <div className="resourceBox">
           <h3>📥 Evidence</h3>
-          <p className="sub">Download and investigate from your Kali workstation.</p>
-          <a className="resourceBtn" href={c.resource.url} download={c.resource.filename}>↓ {c.resource.label}</a>
-          {c.resource.filename && <p className="fileName">{c.resource.filename}</p>}
+          <p className="sub">Investigate from your Kali workstation.</p>
+          {(Array.isArray(c.resource) ? c.resource : [c.resource]).map((r, i) => (
+            <div key={i} className="resourceItem">
+              {r.external ? (
+                <a className="resourceBtn" href={r.url} target="_blank" rel="noopener noreferrer">
+                  🖥 {r.label}
+                </a>
+              ) : (
+                <a className="resourceBtn" href={r.url} download={r.filename}>
+                  ↓ {r.label}
+                </a>
+              )}
+              {r.filename && !r.external && <p className="fileName">{r.filename}</p>}
+            </div>
+          ))}
         </div>
       )}
+
+    
 
       <h2 className="sectionTitle">Steps</h2>
       <ol className="stepTrail">

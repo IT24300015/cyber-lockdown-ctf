@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staging Admin — Nova Tech Solutions</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, 'Segoe UI', Arial, sans-serif;
+            background: #f0f4f8;
+            color: #1a202c;
+            min-height: 100vh;
+        }
+        header {
+            background: linear-gradient(90deg, #1a3a6c, #2456a0);
+            color: #fff;
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo-area { display: flex; align-items: center; gap: 14px; }
+        .logo {
+            width: 40px; height: 40px;
+            background: #fff; color: #1a3a6c;
+            border-radius: 6px;
+            display: grid; place-items: center;
+            font-size: 22px; font-weight: bold;
+        }
+        header h1 { font-size: 1.05rem; }
+        .status {
+            font-size: 0.85rem;
+            background: rgba(255,255,255,0.15);
+            padding: 6px 14px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .dot {
+            width: 8px; height: 8px;
+            background: #39ff88;
+            border-radius: 50%;
+        }
+        .banner {
+            background: #fef3c7;
+            color: #856404;
+            padding: 10px 32px;
+            font-size: 0.85rem;
+            border-bottom: 1px solid #ffeeba;
+        }
+        main {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 32px;
+        }
+        h2 {
+            font-size: 1.3rem;
+            color: #1a3a6c;
+            margin-bottom: 6px;
+        }
+        .sub {
+            color: #718096;
+            font-size: 0.9rem;
+            margin-bottom: 24px;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+        .card {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .card .label {
+            font-size: 0.78rem;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+        .card .value {
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #1a3a6c;
+            font-family: monospace;
+        }
+        .card .value.green { color: #16a34a; }
+        .card .value.red   { color: #dc2626; }
+        .card .value.amber { color: #d97706; }
+        .panel {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+        .panel h3 {
+            font-size: 1rem;
+            color: #1a3a6c;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+        }
+        th, td {
+            text-align: left;
+            padding: 10px 8px;
+            border-bottom: 1px solid #f0f4f8;
+        }
+        th {
+            color: #718096;
+            font-weight: 500;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+        }
+        td {
+            color: #2d3748;
+            font-family: monospace;
+        }
+        .badge {
+            display: inline-block;
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        .badge.online   { background: #dcfce7; color: #166534; }
+        .badge.degraded { background: #fef3c7; color: #92400e; }
+        .badge.offline  { background: #fee2e2; color: #991b1b; }
+        footer {
+            text-align: center;
+            padding: 24px;
+            color: #718096;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo-area">
+            <div class="logo">N</div>
+            <div>
+                <h1>Staging Admin Dashboard</h1>
+                <p style="font-size:0.75rem;opacity:0.7;">Nova Tech Solutions · Internal</p>
+            </div>
+        </div>
+        <div class="status">
+            <span class="dot"></span> Session: authenticated
+        </div>
+    </header>
+
+    <div class="banner">
+        🔓 You are viewing this page because authentication was bypassed. Unauthorized access detected.
+    </div>
+
+    <main>
+        <h2>System Overview</h2>
+        <p class="sub">Live staging environment status — updated every 30 seconds</p>
+
+        <div class="grid">
+            <div class="card">
+                <div class="label">Active Users</div>
+                <div class="value">47</div>
+            </div>
+            <div class="card">
+                <div class="label">Deployments Today</div>
+                <div class="value">12</div>
+            </div>
+            <div class="card">
+                <div class="label">Failed Logins</div>
+                <div class="value red">203</div>
+            </div>
+            <div class="card">
+                <div class="label">Uptime</div>
+                <div class="value green">99.4%</div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <h3>Recent Login Attempts</h3>
+            <table>
+                <thead>
+                    <tr><th>Timestamp</th><th>Username</th><th>Source IP</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>2026-10-08 18:41:02</td><td>a.perera</td><td>10.20.5.14</td><td><span class="badge online">success</span></td></tr>
+                    <tr><td>2026-10-08 18:38:44</td><td>unknown</td><td>192.168.56.10</td><td><span class="badge offline">failed</span></td></tr>
+                    <tr><td>2026-10-08 18:35:12</td><td>j.silva</td><td>10.20.5.42</td><td><span class="badge online">success</span></td></tr>
+                    <tr><td>2026-10-08 18:32:09</td><td>admin</td><td>192.168.56.10</td><td><span class="badge offline">failed</span></td></tr>
+                    <tr><td>2026-10-08 18:29:55</td><td>r.kumar</td><td>10.20.5.18</td><td><span class="badge online">success</span></td></tr>
+                    <tr><td>2026-10-08 18:27:11</td><td>unknown</td><td>192.168.56.10</td><td><span class="badge degraded">blocked</span></td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="panel">
+            <h3>Staging Environment Notes</h3>
+            <p style="font-size:0.9rem;color:#4a5568;line-height:1.7;">
+                This environment is used for testing new features before production release. 
+                Configuration files and secrets should be rotated regularly. See the operations 
+                wiki for backup procedures and incident escalation contacts.
+            </p>
+        </div>
+    </main>
+
+    <footer>
+        © 2026 Nova Tech Solutions · Staging Admin v2.1
+    </footer>
+
+    <!--
+        ============================================================
+        INTERNAL NOTE — DO NOT COMMIT
+        ============================================================
+
+        Pre-deletion backup of the audit flag. This flag will be rotated
+        once the security team completes the incident review. Until then,
+        keep the reference here in case of rollback.
+
+        AUDIT_FLAG = CTF{sqli_4uth_byp4ss_s3cur3_l0g1n}
+
+        ============================================================
+    -->
+</body>
+</html>

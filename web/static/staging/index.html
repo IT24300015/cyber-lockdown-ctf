@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nova Tech Staging Portal — Employee Login</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="login-wrapper">
+        <div class="brand-panel">
+            <div class="logo">N</div>
+            <h1>Nova Tech Solutions</h1>
+            <p class="tagline">Staging Environment Portal</p>
+            <div class="divider"></div>
+            <ul class="features">
+                <li>🔒 Internal employee access only</li>
+                <li>📊 Real-time staging metrics</li>
+                <li>⚙️ Configuration management</li>
+            </ul>
+            <p class="warning">⚠️ Unauthorized access is prohibited and monitored.</p>
+        </div>
+
+        <div class="login-panel">
+            <h2>Employee Login</h2>
+            <p class="sub">Sign in to access staging resources</p>
+
+            <form id="loginForm">
+                <label>
+                    <span>Username</span>
+                    <input id="username" type="text" name="username" placeholder="username" autocomplete="off" required />
+                </label>
+
+                <label>
+                    <span>Password</span>
+                    <input id="password" type="password" name="password" placeholder="password" autocomplete="off" required />
+                </label>
+
+                <button type="submit" id="submitBtn">Sign In →</button>
+            </form>
+
+            <div id="message" class="message"></div>
+
+            <p class="help">Having trouble? Contact <a href="#">IT Support</a></p>
+        </div>
+    </div>
+
+    <!--
+        ============================================================
+        DEV NOTE — TEMP (must be removed before production deploy)
+        ============================================================
+
+        Legacy staging encryption key (used by the ops scripts to
+        decrypt rotated log bundles). Will move to environment
+        variable in the next release. DO NOT SHARE.
+
+        AES_KEY = novatech2026key!
+
+        ============================================================
+    -->
+
+    <script>
+        const form = document.getElementById('loginForm');
+        const msg = document.getElementById('message');
+        const btn = document.getElementById('submitBtn');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            msg.className = 'message';
+            msg.textContent = '';
+            btn.disabled = true;
+            btn.textContent = 'Signing in...';
+
+            try {
+                const res = await fetch('/api/staging-login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    msg.className = 'message success';
+                    msg.textContent = 'Login successful. Redirecting...';
+                    setTimeout(() => { window.location.href = data.adminUrl; }, 800);
+                } else {
+                    msg.className = 'message error';
+                    msg.textContent = data.error || 'Invalid credentials.';
+                    btn.disabled = false;
+                    btn.textContent = 'Sign In →';
+                }
+            } catch (err) {
+                msg.className = 'message error';
+                msg.textContent = 'Server error. Try again.';
+                btn.disabled = false;
+                btn.textContent = 'Sign In →';
+            }
+        });
+    </script>
+</body>
+</html>
