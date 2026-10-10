@@ -137,13 +137,27 @@ Paste a Base64 string to decode it:
     }
     try {
       const decoded = atob(input);
-      out.innerHTML = `<span style="color:#166534">Decoded:</span>\n${decoded}`;
+      if (decoded.startsWith('/') && decoded.includes('/')) {
+        out.innerHTML = `
+<span style="color:#166534;">Decoded:</span>
+
+  <code style="background:#e8f0fb; padding:2px 6px; border-radius:3px;">${decoded}</code>
+
+<span style="color:#2456a0; font-weight:600;">Action:</span>
+  <a href="/challenge-files${decoded}" target="_blank" style="
+    display: inline-block; margin-top: 8px; padding: 8px 14px;
+    background: #2456a0; color: #fff; text-decoration: none;
+    border-radius: 4px; font-family: monospace; font-size: 0.85rem;
+  ">📂 Open ${decoded}</a>
+        `;
+      } else {
+        out.innerHTML = `<span style="color:#166534;">Decoded:</span>\n${decoded}`;
+      }
     } catch (e) {
-      out.innerHTML = `<span style="color:#991b1b">Invalid Base64 value.</span>`;
+      out.innerHTML = `<span style="color:#991b1b;">Invalid Base64 value.</span>`;
     }
   });
 }
-
 // ==== IMAGE ZOOM — reveals hidden username in the badge ====
 function runZoom() {
   previewTitle.textContent = 'Image Zoom';

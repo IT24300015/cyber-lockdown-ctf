@@ -323,3 +323,20 @@ footer {
     font-style: italic;
     margin-bottom: 10px;
 }
+.openFileBtn {
+    display: inline-block;
+    padding: 10px 18px;
+    background: #2456a0;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.9rem;
+    margin-top: 8px;
+    transition: 0.15s;
+}
+.openFileBtn:hover {
+    background: #1a3a6c;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(36,86,160,0.3);
+}
