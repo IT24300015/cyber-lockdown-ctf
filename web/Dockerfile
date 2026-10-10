@@ -2,7 +2,7 @@
 FROM node:20-alpine AS frontend
 WORKDIR /app/frontend
 COPY frontend/package*.json ./
-RUN npm install
+RUN npm config set strict-ssl false && npm install --no-audit --no-fund
 COPY frontend/ .
 RUN npm run build
 
@@ -12,14 +12,14 @@ WORKDIR /app
 
 # Copy backend dependencies and install
 COPY backend/package*.json ./
-RUN npm install
+RUN npm config set strict-ssl false && npm install --no-audit --no-fund
 
 # Copy backend code, frontend build, and static files
 COPY backend/ .
 COPY --from=frontend /app/frontend/dist ./frontend/dist
 COPY static/ ./static/
 
-# Fix ownership for the node user (uid=1000, gid=1000)
+# Fix ownership for the node user
 RUN chown -R node:node /app
 
 # Switch to non-root user

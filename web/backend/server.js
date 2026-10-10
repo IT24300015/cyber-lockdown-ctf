@@ -39,7 +39,9 @@ function initSchema(attempt = 1) {
       id INT AUTO_INCREMENT PRIMARY KEY,
       user_id INT, challenge_id INT, step_no INT,
       UNIQUE KEY unique_step (user_id, challenge_id, step_no)
-    )`
+    )`,
+    `ALTER TABLE users ADD COLUMN started_at TIMESTAMP NULL DEFAULT NULL`,
+    `ALTER TABLE users ADD COLUMN completed_at TIMESTAMP NULL DEFAULT NULL`
   ];
 
   let pending = queries.length;
@@ -309,13 +311,21 @@ app.post('/api/auth/login', (req, res) => {
 });
 
 app.get('/api/me', auth, (req, res) => {
-  res.json({ username: req.user.username, score: req.user.score });
+  res.json({
+    username: req.user.username,
+    score: req.user.score,
+    started_at: req.user.started_at || null,
+    completed_at: req.user.completed_at || null
+  });
 });
 
 /* ---------- Challenges ---------- */
 app.get('/api/challenges', auth, (req, res) => {
-  db.query('SELECT challenge_id, awarded FROM submissions WHERE user_id = ?', [req.user.id], (err, solved) => {
-    if (err) return res.status(500).json({ error: 'DB error' });
+  // Auto-start timer on first access
+  if (!req.user.started_at) {
+    db.query('UPDATE users SET started_at = NOW() WHERE id = ?', [req.user.id]);
+  }
+  db.query('SELECT challenge_id, awarded FROM submissions WHERE user_id = ?', [req.user.id], (err, solved) => {   if (err) return res.status(500).json({ error: 'DB error' });
     const solvedMap = {};
     (solved || []).forEach(s => { solvedMap[s.challenge_id] = s.awarded || 0; });
     const solvedIds = (solved || []).map(s => s.challenge_id);
@@ -447,6 +457,13 @@ app.post('/api/challenges/:id/steps/:no/verify', auth, (req, res) => {
             [req.user.id, cid, awarded]);
           db.query('UPDATE users SET score = score + ? WHERE id = ?', [awarded, req.user.id]);
 
+          // Mark completion time if this was the last stage
+          db.query('SELECT COUNT(*) AS cnt FROM submissions WHERE user_id = ?', [req.user.id], (err3, cntRows) => {
+            if (!err3 && cntRows[0].cnt >= 6) {
+              db.query('UPDATE users SET completed_at = NOW() WHERE id = ? AND completed_at IS NULL', [req.user.id]);
+            }
+          });
+
           res.json({
             correct: true,
             challengeComplete: true,
@@ -492,6 +509,12 @@ app.post('/api/challenges/:id/submit', auth, (req, res) => {
             [req.user.id, id, awarded]);
           db.query('UPDATE users SET score = score + ? WHERE id = ?', [awarded, req.user.id]);
 
+          db.query('SELECT COUNT(*) AS cnt FROM submissions WHERE user_id = ?', [req.user.id], (err3, cntRows) => {
+            if (!err3 && cntRows[0].cnt >= 6) {
+              db.query('UPDATE users SET completed_at = NOW() WHERE id = ? AND completed_at IS NULL', [req.user.id]);
+            }
+          });
+
           res.json({
             correct: true,
             awarded,
@@ -527,9 +550,16 @@ app.post('/api/challenges/:id/hints/:no/unlock', auth, (req, res) => {
 /* ---------- Scoreboard ---------- */
 app.get('/api/scoreboard', auth, (req, res) => {
   db.query(
-    `SELECT u.username, u.score, COUNT(s.id) AS solved
-     FROM users u LEFT JOIN submissions s ON u.id = s.user_id
-     GROUP BY u.id ORDER BY u.score DESC`,
+    `SELECT
+       u.username,
+       u.score,
+       COUNT(s.id) AS solved,
+       u.started_at,
+       u.completed_at
+     FROM users u
+     LEFT JOIN submissions s ON u.id = s.user_id
+     GROUP BY u.id
+     ORDER BY u.score DESC, u.completed_at ASC, u.started_at ASC`,
     (err, rows) => {
       if (err) return res.status(500).json({ error: 'DB error' });
       res.json(rows);

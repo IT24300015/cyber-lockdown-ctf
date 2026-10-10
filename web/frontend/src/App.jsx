@@ -24,9 +24,18 @@ const P = {
   layers: 'M12 2l10 5-10 5L2 7z M2 17l10 5 10-5 M2 12l10 5 10-5',
   arrowLeft: 'M19 12H5 M12 19l-7-7 7-7',
   arrow: 'M5 12h14 M12 5l7 7-7 7',
+  clock: 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20z M12 6v6l4 2',
 };
 const STAGE_ICON = { 1:'search', 2:'file', 3:'code', 4:'key', 5:'pulse', 6:'terminal' };
 const tone = (d) => (d === 'Easy' ? 'easy' : d === 'Moderate' ? 'mod' : 'hard');
+
+function formatTime(seconds) {
+  const s = Math.max(0, Math.floor(seconds));
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+}
 
 function Icon({ n, s = 18 }) {
   return (
@@ -42,6 +51,29 @@ function Field({ icon, label, ...p }) {
       <span>{label}</span>
       <div className="inp"><Icon n={icon} /><input {...p} /></div>
     </label>
+  );
+}
+
+function Timer({ me }) {
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+  if (!me.started_at) {
+    return (
+      <span className="timer idle" title="Timer starts when you open Challenges">
+        <Icon n="clock" s={14} /> --:--:--
+      </span>
+    );
+  }
+  const start = new Date(me.started_at).getTime();
+  const end = me.completed_at ? new Date(me.completed_at).getTime() : now;
+  const elapsed = (end - start) / 1000;
+  return (
+    <span className={`timer ${me.completed_at ? 'done' : 'live'}`} title={me.completed_at ? 'Completed' : 'Live'}>
+      <Icon n="clock" s={14} /> {formatTime(elapsed)}
+    </span>
   );
 }
 
@@ -228,7 +260,6 @@ function ChallengePage({ c, list, onBack, onChange, onOpenStage }) {
       if (r.correct) {
         setAnswers(prev => ({ ...prev, [stepNo]: '' }));
         await onChange();
-        // If backend auto-completed the challenge (last step IS the flag)
         if (r.challengeComplete) {
           setCelebration({
             awarded: r.awarded,
@@ -324,8 +355,6 @@ function ChallengePage({ c, list, onBack, onChange, onOpenStage }) {
         </div>
       )}
 
-    
-
       <h2 className="sectionTitle">Steps</h2>
       <ol className="stepTrail">
         {c.steps?.map((step) => {
@@ -385,7 +414,21 @@ function ChallengePage({ c, list, onBack, onChange, onOpenStage }) {
       <div className="flagSection">
         <h3>🚩 Submit Flag</h3>
         {c.solved ? (
-          <div className="solvedBox big"><strong>✓ Challenge complete</strong> +{c.awarded} points</div>
+          <div className="solvedBox big">
+            <div className="solvedInfo">
+              <strong>✓ Challenge complete</strong>
+              <span className="solvedPts">+{c.awarded} points</span>
+            </div>
+            {nextStage ? (
+              <button className="btn nextStageBtn" onClick={handleNext}>
+                Next stage <Icon n="arrow" s={16} />
+              </button>
+            ) : (
+              <button className="btn nextStageBtn" onClick={onBack}>
+                Back to challenges <Icon n="arrow" s={16} />
+              </button>
+            )}
+          </div>
         ) : completed.length < c.steps.length ? (
           <p className="sub">🔒 Complete all steps above to unlock flag submission.</p>
         ) : (
@@ -415,23 +458,73 @@ function ChallengePage({ c, list, onBack, onChange, onOpenStage }) {
 /* ============ SCOREBOARD ============ */
 function Scoreboard({ me }) {
   const [rows, setRows] = useState([]);
+  const [now, setNow] = useState(Date.now());
+
   useEffect(() => { api('/scoreboard').then(setRows); }, []);
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  function getElapsed(r) {
+    if (!r.started_at) return null;
+    const start = new Date(r.started_at).getTime();
+    const end = r.completed_at ? new Date(r.completed_at).getTime() : now;
+    return (end - start) / 1000;
+  }
+
+  const ranked = [...rows].map(r => ({ ...r, elapsed: getElapsed(r) }));
+
   return (
     <main>
-      <h1 className="glow">Scoreboard</h1>
-      <div className="panel">
-        <table>
-          <thead><tr><th>Rank</th><th>Player</th><th>Stages solved</th><th>Score</th></tr></thead>
-          <tbody>
-            {rows.map((r, i) => (
-              <tr key={r.username} className={r.username===me.username?'me':''}>
-                <td className={i<3?`rank r${i+1}`:'rank'}>{i<3 && <Icon n="trophy" s={16}/>}{i+1}</td>
-                <td>{r.username}</td><td>{r.solved}</td><td className="pts">{r.score}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="boardHeader">
+        <h1 className="glow">Leaderboard</h1>
+        <p className="lead">Live standings — score, stages, and total time</p>
       </div>
+
+      {ranked.length === 0 ? (
+        <div className="panel emptyBoard">
+          <p>No players yet. Be the first to complete the challenges.</p>
+        </div>
+      ) : (
+        <ol className="scoreList">
+          {ranked.map((r, i) => {
+            const isMe = r.username === me.username;
+            const rank = i + 1;
+            const rankClass = rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : '';
+            return (
+              <li key={r.username} className={`scoreRow ${isMe ? 'isMe' : ''} ${rankClass}`}>
+                <div className="rankBadge">
+                  {rank <= 3 ? <Icon n="trophy" s={20} /> : <span>#{rank}</span>}
+                </div>
+
+                <div className="scoreMain">
+                  <div className="scoreNameRow">
+                    <span className="scoreName">{r.username}</span>
+                    {isMe && <span className="meTag">you</span>}
+                  </div>
+                  <div className="scoreMeta">
+                    <span className="metaItem">
+                      <Icon n="check" s={14} /> {r.solved}/6 stages
+                    </span>
+                    {r.elapsed !== null && (
+                      <span className="metaItem">
+                        <Icon n="clock" s={14} /> {formatTime(r.elapsed)}
+                        {!r.completed_at && <span className="liveDot" />}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="scoreValue">
+                  <span className="scoreNum">{r.score}</span>
+                  <span className="scoreLbl">pts</span>
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      )}
     </main>
   );
 }
@@ -474,6 +567,7 @@ export default function App() {
         </nav>
         <div className="who">
           <span className="user"><Icon n="user" s={16}/>{me.username}</span>
+          <Timer me={me} />
           <b className="pts"><Icon n="zap" s={15}/>{me.score}</b>
           <button className="iconbtn" onClick={logout} title="Log out"><Icon n="logout"/></button>
         </div>
