@@ -736,3 +736,151 @@ input[type="text"]:focus{background:#091827!important;color:#fff!important;borde
   .scoreNum { font-size: 1.3rem; }
   .rankBadge { width: 38px; height: 38px; }
 }
+
+/* ===================== TASK-LINKED INLINE HINTS ===================== */
+.taskHints {
+  margin-top: 1rem;
+  padding-top: .9rem;
+  border-top: 1px dashed var(--line);
+}
+
+.inlineHint {
+  background: #a855ff0a;
+  border-left: 3px solid var(--vi);
+  padding: .7rem .9rem;
+  margin: .4rem 0 0 0;
+  border-radius: 0 4px 4px 0;
+  animation: fadeIn .35s ease;
+}
+
+.inlineHint p {
+  margin: .4rem 0 0 0;
+  font-size: .95rem;
+  line-height: 1.55;
+}
+
+.inlineHint .row strong {
+  font-size: .9rem;
+  color: var(--vi);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ===================== FONT SIZE BOOST (V2) ===================== */
+body {
+  font-size: 19px;
+}
+
+.stepCard h4 {
+  font-size: 1.3rem;
+}
+
+.stepCard p {
+  font-size: 1.1rem;
+  line-height: 1.7;
+}
+
+.stepForm input {
+  font-size: 1.05rem;
+  padding: .8rem 1rem;
+}
+
+.stepForm button {
+  font-size: 1rem;
+  padding: .8rem 1.4rem;
+}
+
+.hint p {
+  font-size: 1.05rem;
+  line-height: 1.65;
+}
+
+.hintUnlockBtn {
+  font-size: 1rem;
+  padding: .6rem 1rem;
+}
+
+.inlineHint .row strong {
+  font-size: 1rem;
+}
+
+.flagForm input {
+  font-size: 1.05rem;
+  padding: .8rem 1rem;
+}
+
+.flagForm button {
+  font-size: 1rem;
+}
+
+.desc {
+  font-size: 1.15rem;
+  line-height: 1.75;
+}
+
+.sub {
+  font-size: 1rem;
+}
+
+.chHeader h1 {
+  font-size: 2.5rem;
+}
+
+.sectionTitle {
+  font-size: 1.65rem;
+}
+
+.eyebrow {
+  font-size: .9rem;
+}
+
+.pill {
+  font-size: .85rem;
+  padding: .15rem .75rem;
+}
+
+.pts {
+  font-size: 1rem;
+}
+
+.backBtn {
+  font-size: 1rem;
+}
+
+.okMsg, .badMsg {
+  font-size: 1rem;
+}
+
+/* Scoreboard */
+.scoreName { font-size: 1.25rem; }
+.scoreMeta { font-size: 1rem; }
+.scoreNum { font-size: 2rem; }
+.meTag { font-size: .78rem; }
+.rankBadge { font-size: 1.05rem; }
+
+/* Timer */
+.timer {
+  font-size: 1rem;
+  padding: .4rem .8rem;
+}
+
+/* Header */
+.logo { font-size: 1.3rem; }
+.top nav button { font-size: 1rem; }
+.user { font-size: 1rem; }
+
+.hintCountdown {
+  margin-top: .8rem;
+  padding: .6rem .9rem;
+  background: #a855ff08;
+  border-left: 3px solid var(--vi);
+  border-radius: 0 4px 4px 0;
+  color: var(--vi);
+  font-family: var(--mono);
+  font-size: 1rem;
+  letter-spacing: .02em;
+  animation: fadeIn .3s ease;
+}

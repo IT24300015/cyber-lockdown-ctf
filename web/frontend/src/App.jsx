@@ -181,7 +181,7 @@ function Challenges({ me, list, onOpen }) {
               <span className="sub">{c.domain}</span>
               <span className="row small">
                 <span className="pts"><Icon n="zap" s={14}/>{c.solved?`Solved, +${c.awarded} points`:`${c.points} points`}</span>
-                <span>{c.locked?`Solve stage ${c.stage-1} to unlock`:`${c.completedSteps?.length || 0}/${c.steps?.length || 0} steps done`}</span>
+                <span>{c.locked?`Solve stage ${c.stage-1} to unlock`:`${c.completedSteps?.length || 0}/${c.steps?.length || 0} tasks done`}</span>
               </span>
             </button>
           </li>
@@ -242,12 +242,71 @@ function ChallengePage({ c, list, onBack, onChange, onOpenStage }) {
   const [hints, setHints] = useState(c.hints || []);
   const [hintBusy, setHintBusy] = useState(null);
   const [celebration, setCelebration] = useState(null);
+  const [now, setNow] = useState(Date.now());
+  // Track when the user first arrived at each task
+  const [taskSeenAt, setTaskSeenAt] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem(`taskSeenAt_${c.id}`) || '{}');
+    } catch { return {}; }
+  });
+
+  // Tick every second so the 30s delay updates live
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  // Persist task-seen timestamps per challenge
+  useEffect(() => {
+    localStorage.setItem(`taskSeenAt_${c.id}`, JSON.stringify(taskSeenAt));
+  }, [taskSeenAt, c.id]);
 
   useEffect(() => { setHints(c.hints || []); }, [c]);
 
   const completed = c.completedSteps || [];
   const currentStep = c.steps?.find(s => !completed.includes(s.no));
   const nextStage = list?.find(x => x.stage === c.stage + 1);
+
+  // Record when the user first arrives at the currently-active task
+  useEffect(() => {
+    if (!currentStep) return;
+    if (!taskSeenAt[currentStep.no]) {
+      setTaskSeenAt(prev => ({ ...prev, [currentStep.no]: Date.now() }));
+    }
+  }, [currentStep?.no]);
+
+  // Hint appears 30s after user arrives at the task
+  const HINT_DELAY_MS = 30000;
+
+  // Hint N corresponds to Task N
+  // Visible only after 30s on that task; stays visible forever after
+  function isHintVisible(hintNo) {
+    const taskDone = completed.includes(hintNo);
+    const taskActive = currentStep?.no === hintNo;
+
+    if (taskDone) return true;
+    if (!taskActive) return false;
+
+    const seenAt = taskSeenAt[hintNo];
+    if (!seenAt) return false;
+    return (now - seenAt) >= HINT_DELAY_MS;
+  }
+
+  // Countdown seconds before the hint appears
+  function hintCountdown(hintNo) {
+    const taskActive = currentStep?.no === hintNo;
+    if (!taskActive) return null;
+    const seenAt = taskSeenAt[hintNo];
+    if (!seenAt) return HINT_DELAY_MS / 1000;
+    return Math.max(0, Math.ceil((HINT_DELAY_MS - (now - seenAt)) / 1000));
+  }
+
+  // Is this hint's task reachable (active or already done)?
+  function isHintTaskReached(hintNo) {
+    const taskDone = completed.includes(hintNo);
+    const taskActive = currentStep?.no === hintNo;
+    return taskDone || taskActive;
+  }
 
   async function verifyStep(stepNo) {
     const answer = (answers[stepNo] || '').trim();
@@ -260,6 +319,7 @@ function ChallengePage({ c, list, onBack, onChange, onOpenStage }) {
       if (r.correct) {
         setAnswers(prev => ({ ...prev, [stepNo]: '' }));
         await onChange();
+
         if (r.challengeComplete) {
           setCelebration({
             awarded: r.awarded,
@@ -301,7 +361,11 @@ function ChallengePage({ c, list, onBack, onChange, onOpenStage }) {
 
   async function unlockHint(h) {
     if (h.unlocked || c.solved) return;
-    if (!window.confirm(`Unlock Hint ${h.no}? This reduces your score by ${h.penalty} points.`)) return;
+    if (!isHintTaskReached(h.no)) {
+      alert(`Complete Task ${h.no - 1} first to unlock this hint.`);
+      return;
+    }
+    if (!window.confirm(`Unlock Hint ${h.no} for Task ${h.no}? This reduces your score by ${h.penalty} points.`)) return;
     setHintBusy(h.no);
     try {
       const d = await api(`/challenges/${c.id}/hints/${h.no}/unlock`, { method:'POST' });
@@ -315,6 +379,9 @@ function ChallengePage({ c, list, onBack, onChange, onOpenStage }) {
     if (nextStage) onOpenStage(nextStage.id);
     else onBack();
   }
+
+  // Hints visible for current/just-completed task
+  const visibleHints = hints.filter(h => isHintVisible(h.no));
 
   return (
     <main className="challengePage">
@@ -355,18 +422,20 @@ function ChallengePage({ c, list, onBack, onChange, onOpenStage }) {
         </div>
       )}
 
-      <h2 className="sectionTitle">Steps</h2>
+      <h2 className="sectionTitle">Tasks</h2>
       <ol className="stepTrail">
         {c.steps?.map((step) => {
           const isDone = completed.includes(step.no);
           const isActive = currentStep?.no === step.no;
           const isLocked = !isDone && !isActive;
           const result = results[step.no];
+          // Hints that belong to this specific task
+          const taskHints = visibleHints.filter(h => h.no === step.no);
           return (
             <li key={step.no} className={`stepItem ${isDone?'done':''} ${isActive?'active':''} ${isLocked?'locked':''}`}>
               <div className="stepNode">{isDone ? '✓' : isLocked ? '🔒' : step.no}</div>
               <div className="stepCard">
-                <h4>Step {step.no}: {step.title}</h4>
+                <h4>Task {step.no}: {step.title}</h4>
                 <p>{step.instruction}</p>
                 {isActive && (
                   <form onSubmit={(e)=>{ e.preventDefault(); verifyStep(step.no); }} className="stepForm">
@@ -383,33 +452,39 @@ function ChallengePage({ c, list, onBack, onChange, onOpenStage }) {
                 {result && !result.correct && !isDone && (
                   <p className="badMsg">✗ {result.message || 'Incorrect. Try again.'}</p>
                 )}
+
+                {/* Countdown: hint unlocks in Ns */}
+                {isActive && taskHints.length === 0 && hintCountdown(step.no) > 0 && (
+                  <p className="hintCountdown">
+                    💡 Hint for Task {step.no} unlocks in {hintCountdown(step.no)}s
+                  </p>
+                )}
+
+                {/* Task-specific hints nested inside this task card */}
+                {taskHints.length > 0 && (
+                  <div className="taskHints">
+                    {taskHints.map(h => (
+                      <div className="hint inlineHint" key={h.no}>
+                        <div className="row">
+                          <strong>💡 Hint for Task {step.no}</strong>
+                          <span className="sub">-{h.penalty} pts</span>
+                        </div>
+                        {h.unlocked
+                          ? <p>{h.text}</p>
+                          : <button type="button" className="hintUnlockBtn"
+                              disabled={hintBusy===h.no || c.solved}
+                              onClick={()=>unlockHint(h)}>
+                              {hintBusy===h.no ? 'Unlocking...' : `🔒 Unlock Hint (-${h.penalty} pts)`}
+                            </button>}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </li>
           );
         })}
       </ol>
-
-      {hints.length > 0 && (
-        <div className="hintsSection">
-          <h3>💡 Hints</h3>
-          <p className="sub">Unlocking a hint reduces the points awarded when you solve this stage.</p>
-          <div className="hintList">
-            {hints.map(h => (
-              <div className="hint" key={h.no}>
-                <div className="row">
-                  <strong>Hint {h.no}</strong>
-                  <span className="sub">-{h.penalty} pts</span>
-                </div>
-                {h.unlocked
-                  ? <p>{h.text}</p>
-                  : <button type="button" className="hintUnlockBtn" disabled={hintBusy===h.no || c.solved} onClick={()=>unlockHint(h)}>
-                      {hintBusy===h.no ? 'Unlocking...' : `🔒 Unlock Hint (-${h.penalty} pts)`}
-                    </button>}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       <div className="flagSection">
         <h3>🚩 Submit Flag</h3>
@@ -430,7 +505,7 @@ function ChallengePage({ c, list, onBack, onChange, onOpenStage }) {
             )}
           </div>
         ) : completed.length < c.steps.length ? (
-          <p className="sub">🔒 Complete all steps above to unlock flag submission.</p>
+          <p className="sub">🔒 Complete all tasks above to unlock flag submission.</p>
         ) : (
           <>
             <p className="sub">You have all the information you need. Submit the flag to complete the challenge.</p>
@@ -545,6 +620,15 @@ export default function App() {
     if (!localStorage.getItem('token')) { setReady(true); return; }
     Promise.all([loadMe(), loadChallenges()]).finally(()=>setReady(true));
   }, []);
+
+  // Poll /me every 3s so timer stops when completed_at is set
+  useEffect(() => {
+    if (!me) return;
+    const id = setInterval(() => {
+      api('/me').then(setMe).catch(()=>{});
+    }, 3000);
+    return () => clearInterval(id);
+  }, [me?.username]);
 
   const logout = () => {
     localStorage.removeItem('token');
