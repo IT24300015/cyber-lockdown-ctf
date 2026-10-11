@@ -1,4 +1,4 @@
-# Cyber Lockdown — CTF Play Box
+# Cyber Lockdown - CTF Play Box
 
 A containerized Capture The Flag platform for beginner to intermediate
 cybersecurity students. Built on an isolated Host-Only network using
